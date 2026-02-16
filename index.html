@@ -8,11 +8,24 @@
     <title>Product App</title>
     <script defer src="js/vue.min.js"></script>
     <script defer src="js/main.js"></script>
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <div id="app">
-    <h1>{{ product + '?' + ' ' + product }}</h1>
-    <p>{{description + ' ' + product}}</p>
+
+    <div class="product">
+
+        <div class="product-image">
+            <img :src="image" :alt="altText">
+        </div>
+
+        <div class="product-info">
+            <h1>{{ product }}</h1>
+            <a :href="link">{{ aText }}</a>
+        </div>
+
+    </div>
+
 </div>
 
 </body>
