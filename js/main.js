@@ -6,3 +6,4 @@ let app = new Vue({
         product: "Socks"
     }
 })
+//
