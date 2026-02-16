@@ -31,6 +31,17 @@
             <span v-if="onSale" >On Sale</span>
             <span v-else>off sale </span>
 
+            <ul>
+                <li v-for="detail in details">{{detail}}</li>
+            </ul>
+
+            <div v-for="variant in variants" :key="variant.variantId">
+                <p>{{variant.variantColor}}</p>
+            </div>
+            <ul v-for="size in sizes">
+                <li>{{size}}</li>
+            </ul>
+
         </div>
 
     </div>
