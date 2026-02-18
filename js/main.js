@@ -2,44 +2,53 @@ Vue.component('product', {
     props: {
         premium: {
             type: Boolean,
-            default: true
+            required: true
         }
     },
-    template:
-        `<div class="product">
-        <div class="product-image">
-            <img :src="image" :alt="altText"/>
-        </div>
+    template: `
+   <div class="product">
+    <div class="product-image">
+           <img :src="image" :alt="altText"/>
+       </div>
 
-        <div class="product-info">
-            <h1>{{ title }}</h1>
-            <p v-if="inStock">In stock</p>
-            <p v-else>Out of Stock</p>
-            <p>Shipping: {{ shipping }}</p>
+       <div class="product-info">
+           <h1>{{ title }}</h1>
+           <p v-if="inStock">In stock</p>
+           <p v-else>Out of Stock</p>
+           <ul>
+               <li v-for="detail in details">{{ detail }}</li>
+           </ul>
+          <p>Shipping: {{ shipping }}</p>
+           <div
+                   class="color-box"
+                   v-for="(variant, index) in variants"
+                   :key="variant.variantId"
+                   :style="{ backgroundColor:variant.variantColor }"
+                   @mouseover="updateProduct(index)"
+           ></div>
           
-          <product-details :details="details"></product-details>
 
-            <div
-                    class="color-box"
-                    v-for="(variant, index) in variants"
-                    :key="variant.variantId"
-                    :style="{ backgroundColor:variant.variantColor }"
-                    @mouseover="updateProduct(index)"
-            ></div>
+           
+
+           <button
+                   v-on:click="addToCart"
+                   :disabled="!inStock"
+                   :class="{ disabledButton: !inStock }"
+           >
+               Add to cart
+           </button>
+           
+           <button
+                   v-on:click="delToCart"
+                   :disabled="!inStock"
+                   :class="{ disabledButton: !inStock }"
+           >
+               del to cart
+           </button>
        
-
-        <div class="cart">
-            <p>Cart({{ cart }})</p>
-        </div>
-
-        <button
-                v-on:click="addToCart"
-                :disabled="!inStock"
-                :class="{ disabledButton: !inStock }"
-        >
-            Add to cart
-        </button>
-    </div>`,
+       </div>
+   </div>
+ `,
     data() {
         return {
             product: "Socks",
@@ -61,13 +70,20 @@ Vue.component('product', {
                     variantQuantity: 0
                 }
             ],
-            cart: 0
+
         }
     },
     methods: {
         addToCart() {
-            this.cart += 1
+            this.$emit('add-to-cart',
+                this.variants[this.selectedVariant].variantId);
         },
+
+        delToCart() {
+            this.$emit('del-to-cart',
+                this.variants[this.selectedVariant].variantId);
+        },
+
         updateProduct(index) {
             this.selectedVariant = index;
             console.log(index);
@@ -87,34 +103,25 @@ Vue.component('product', {
             if (this.premium) {
                 return "Free";
             } else {
-                return "2,99";
+                return 2.99
             }
         }
     }
 })
-Vue.component('product-details', {
-    props: {
-        details: {
-            type: Array,
-            required: true,
-        }
-    },
-    template:`
-    <ul class="detail-list">
-      <li v-for="detail in details" >
-        {{detail}}
-      </li>
-    </ul>`,
-    data() {
-        return {};
-    },
-    methods: {},
-    computed: {}
-});
 
 let app = new Vue({
     el: '#app',
     data: {
         premium: true,
+        cart: []
+    },
+    methods: {
+        updateCart(id) {
+            this.cart.push(id);
+        },
+        delUpdateCart(id) {
+            this.cart.pop(id);
+        }
     }
+
 })
