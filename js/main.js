@@ -1,3 +1,142 @@
+let eventBus = new Vue()
+let detailsBus = new Vue()
+
+Vue.component('product-tabs', {
+    template: `
+     <div>   
+       <ul>
+         <span class="tab"
+               :class="{ activeTab: selectedTab === tab }"
+               v-for="(tab, index) in tabs"
+               @click="selectedTab = tab"
+         >{{ tab }}</span>
+       </ul>
+       <div v-show="selectedTab === 'Reviews'">
+         <p v-if="!reviews.length">There are no reviews yet.</p>
+         <ul>
+           <li v-for="review in reviews">
+           <p>{{ review.name }}</p>
+           <p>Rating: {{ review.rating }}</p>
+           <p>{{ review.review }}</p>
+           </li>
+         </ul>
+       </div>
+       <div v-show="selectedTab === 'Make a Review'">
+         <product-review></product-review>
+       </div>
+       
+       <div v-show="selectedTab === 'Details'">
+         <ul>
+         <li v-for="detail in details">{{detail}}</li>
+         </ul>
+       </div>
+       <div v-show="selectedTab === 'Shipping'">
+         <p v-if="typeof shopping === 'number'">$ {{shipping}}</p>
+         <p v-else>{{shipping}}</p>
+       </div>
+       
+     </div>
+`,
+
+    data() {
+        return {
+            tabs: ['Reviews', 'Make a Review', 'Details', 'Shipping'],
+            selectedTab: 'Reviews'
+        }
+    },
+
+    props: {
+        reviews: {
+            type: Array,
+            required: false
+        },
+        details: {
+            type: Array,
+            required: false
+        },
+        shipping: {
+            type: [Number, String],
+            required: false
+        }
+    },
+
+
+})
+
+
+
+Vue.component('product-review', {
+    template: `
+
+<form class="review-form" @submit.prevent="onSubmit">
+
+<p v-if="errors.length">
+ <b>Please correct the following error(s):</b>
+ <ul>
+   <li v-for="error in errors">{{ error }}</li>
+ </ul>
+</p>
+
+ <p>
+   <label for="name">Name:</label>
+   <input id="name" v-model="name" placeholder="name">
+ </p>
+
+ <p>
+   <label for="review">Review:</label>
+   <textarea id="review" v-model="review"></textarea>
+ </p>
+
+ <p>
+   <label for="rating">Rating:</label>
+   <select id="rating" v-model.number="rating">
+     <option>5</option>
+     <option>4</option>
+     <option>3</option>
+     <option>2</option>
+     <option>1</option>
+   </select>
+ </p>
+
+ <p>
+   <input type="submit" value="Submit"> 
+ </p>
+
+</form>
+ `,
+    data() {
+        return {
+            name: null,
+            review: null,
+            rating: null,
+            errors: [],
+
+        }
+    },
+    methods:{
+
+        onSubmit() {
+            if(this.name && this.review && this.rating) {
+                let productReview = {
+                    name: this.name,
+                    review: this.review,
+                    rating: this.rating
+                }
+                eventBus.$emit('review-submitted', productReview)
+
+                this.name = null
+                this.review = null
+                this.rating = null
+            } else {
+                if(!this.name) this.errors.push("Name required.")
+                if(!this.review) this.errors.push("Review required.")
+                if(!this.rating) this.errors.push("Rating required.")
+            }
+        },
+
+    }
+})
+
 Vue.component('product', {
     props: {
         premium: {
@@ -12,7 +151,6 @@ Vue.component('product', {
        </div>
 
        <div class="product-info">
-       
            <h1>{{ title }}</h1>
            <p v-if="inStock">In stock</p>
            <p v-else>Out of Stock</p>
@@ -28,39 +166,18 @@ Vue.component('product', {
                    @mouseover="updateProduct(index)"
            ></div>
           
-
-           
-
            <button
                    v-on:click="addToCart"
                    :disabled="!inStock"
                    :class="{ disabledButton: !inStock }"
            >
                Add to cart
-           </button>
-           
-           <button
-                   v-on:click="delToCart"
-                   :disabled="!inStock"
-                   :class="{ disabledButton: !inStock }"
-           >
-               del to cart
-           </button>
-       </div>
-       <div>
-            <h2>Reviews</h2>
-            <p v-if="!reviews.length">There are no reviews yet.</p>
-            <ul>
-                <li v-for="review in reviews">
-                <p>{{ review.name }}</p>
-                <p>Rating: {{ review.rating }}</p>
-                <p>{{ review.review }}</p>
-                <p>{{ review.recommended }}</p>
-                </li>
-            </ul>
-       </div>
+           </button>    
+       </div>           
+           <product-tabs :reviews="reviews"
+           :details="details"
+           :shipping="shipping"></product-tabs>
 
-   </div>
  `,
     data() {
         return {
@@ -84,25 +201,23 @@ Vue.component('product', {
                 }
             ],
             reviews: []
-
         }
     },
     methods: {
         addToCart() {
-            this.$emit('add-to-cart',
-                this.variants[this.selectedVariant].variantId);
+            this.$emit('add-to-cart', this.variants[this.selectedVariant].variantId);
         },
-
-        delToCart() {
-            this.$emit('del-to-cart',
-                this.variants[this.selectedVariant].variantId);
-        },
-
         updateProduct(index) {
             this.selectedVariant = index;
             console.log(index);
         },
     },
+    mounted() {
+        eventBus.$on('review-submitted', productReview => {
+            this.reviews.push(productReview)
+        })
+    },
+
     computed: {
         title() {
             return this.brand + ' ' + this.product;
@@ -132,94 +247,6 @@ let app = new Vue({
     methods: {
         updateCart(id) {
             this.cart.push(id);
-        },
-        delUpdateCart(id) {
-            this.cart.pop(id);
-        },
-        addReview(productReview) {
-            this.reviews.push(productReview)
-        }
-
-    }
-
-})
-
-Vue.component('product-review', {
-    template: `
-<form class="review-form" @submit.prevent="onSubmit">
- <p>
-   <label for="name">Name:</label>
-   <input id="name" v-model="name" placeholder="name">
- </p>
-
- <p>
-   <label for="review">Review:</label>
-   <textarea id="review" v-model="review"></textarea>
- </p>
- 
-  <p>Would you recommend this product?</p>
-  <input type="radio" id="recommended" name="group1" value="a" v-model="recommended">
-  <label for="recommended" >yes</label><br>
-  
-  <input type="radio" id="recommended" name="group1" value="b" v-model="recommended">
-  <label for="recommended" >no</label>
-
- <p>
-   <label for="rating">Rating:</label>
-   <select id="rating" v-model.number="rating">
-     <option>5</option>
-     <option>4</option>
-     <option>3</option>
-     <option>2</option>
-     <option>1</option>
-   </select>
-   
-   
- </p>
-
- <p>
-   <input type="submit" value="Submit"> 
- </p>
-<p v-if="errors.length">
- <b>Please correct the following error(s):</b>
- <ul>
-   <li v-for="error in errors">{{ error }}</li>
- </ul>
-</p>
-
-</form>
-
- `,
-    data() {
-        return {
-            name: null,
-            review: null,
-            rating: null,
-            recommended: null,
-            errors: []
-        }
-    },
-    methods: {
-        onSubmit() {
-            if (this.name && this.review && this.rating && this.recommended) {
-                let productReview = {
-                    name: this.name,
-                    review: this.review,
-                    rating: this.rating,
-                    recommended: this.recommended
-                }
-                this.$emit('review-submitted', productReview)
-                this.name = null
-                this.review = null
-                this.rating = null
-                this.recommended = null
-            } else {
-                if (!this.name) this.errors.push("Name required.")
-                if (!this.review) this.errors.push("Review required.")
-                if (!this.rating) this.errors.push("Rating required.")
-                if (!this.recommended) this.errors.push("recommended required.")
-            }
-
         }
     }
 })
