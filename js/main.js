@@ -1,39 +1,23 @@
-Vue.component('product-details', {
-    props: {
-        premium: Array,
-        required: true
-    },
-    template:`
-        <ul>
-            <li v-for="detail in details" key="detail">{{detail}}</li>
-        </ul>
-`
-
-})
-
 Vue.component('product', {
     props: {
-        premium: Boolean,
-        required: true
+        premium: {
+            type: Boolean,
+            default: true
+        }
     },
-    template: `
-   <div class="product">
-	<div class="product-image">
+    template:
+        `<div class="product">
+        <div class="product-image">
             <img :src="image" :alt="altText"/>
         </div>
 
         <div class="product-info">
             <h1>{{ title }}</h1>
-
             <p v-if="inStock">In stock</p>
             <p v-else>Out of Stock</p>
-            
             <p>Shipping: {{ shipping }}</p>
-            
-            <ul>
-            <product-details detail:detail></product-details>
-        </ul>
-
+          
+          <product-details :details="details"></product-details>
 
             <div
                     class="color-box"
@@ -41,25 +25,21 @@ Vue.component('product', {
                     :key="variant.variantId"
                     :style="{ backgroundColor:variant.variantColor }"
                     @mouseover="updateProduct(index)"
-            >
+            ></div>
+       
 
-            </div>
-
-            <div class="cart">
-                <p>Cart({{ cart }})</p>
-            </div>
-
-            <button
-                    v-on:click="addToCart"
-                    :disabled="!inStock"
-                    :class="{ disabledButton: !inStock }"
-            >
-                Add to cart
-            </button>
+        <div class="cart">
+            <p>Cart({{ cart }})</p>
         </div>
 
-   </div>
- `,
+        <button
+                v-on:click="addToCart"
+                :disabled="!inStock"
+                :class="{ disabledButton: !inStock }"
+        >
+            Add to cart
+        </button>
+    </div>`,
     data() {
         return {
             product: "Socks",
@@ -100,25 +80,41 @@ Vue.component('product', {
         image() {
             return this.variants[this.selectedVariant].variantImage;
         },
-        inStock(){
+        inStock() {
             return this.variants[this.selectedVariant].variantQuantity
         },
         shipping() {
             if (this.premium) {
                 return "Free";
             } else {
-                return 2.99
+                return "2,99";
             }
-        },
+        }
     }
 })
-
-
+Vue.component('product-details', {
+    props: {
+        details: {
+            type: Array,
+            required: true,
+        }
+    },
+    template:`
+    <ul class="detail-list">
+      <li v-for="detail in details" >
+        {{detail}}
+      </li>
+    </ul>`,
+    data() {
+        return {};
+    },
+    methods: {},
+    computed: {}
+});
 
 let app = new Vue({
     el: '#app',
     data: {
         premium: true,
-    },
-
+    }
 })
